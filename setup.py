@@ -18,7 +18,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/armandtvz/dramatiq-taskstate',
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['test_proj', 'test_project']),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
