@@ -1,5 +1,14 @@
 # dramatiq-taskstate
-A middleware for Dramatiq (for Django) that keeps track of task state only when you need it to.
+A middleware for Dramatiq (for Django) that keeps track of task state only
+when you need it to.
+
+
+## Note:
+When using the term "task" in the documentation: that would generally refer
+to the task model in this package. It has nothing to do with Dramatiq or the
+`django_dramatiq` package except that the `Task` model is an abstraction of
+a Dramatiq task. Therefore, this package only operates on the `Task` model
+and not Dramatiq tasks.
 
 
 ## Quickstart
@@ -7,16 +16,14 @@ A middleware for Dramatiq (for Django) that keeps track of task state only when 
    ```
    pip install dramatiq-taskstate
    ```
-   Or via the repo:
-   ```
-   pip install git+https://github.com/armandtvz/dramatiq-taskstate.git
-   ```
 
-1. Add `taskstate` to your `INSTALLED_APPS` in your project settings.py file:
+1. Add `taskstate` and `django.contrib.postgres` to your `INSTALLED_APPS` in
+   your project settings.py file:
    ```python
    INSTALLED_APPS = [
        'django_dramatiq',
        '...',
+       'django.contrib.postgres',
        '...',
        'taskstate',
    ]
@@ -78,6 +85,126 @@ A middleware for Dramatiq (for Django) that keeps track of task state only when 
 
 
 
+## Reporting task state to the UI
+Of course, a common case with background tasks is that the progress/state of a
+task needs to be displayed to a user somehow. This package includes a
+`WebsocketConsumer` that can be used with [django-channels][1] to check the
+status of a task. Check the flowchart in the root of the repo for more
+information on how this works.
+
+Check the `get_task_status.js` file in the `taskstate/static` directory for
+an example of how to send a request via websockets to get/monitor the task
+status/progress. Also, as shown in the flowchart in the root of the repo,
+both `task_changed` -- which only handles when the task object's status is
+updated, i.e, enqueued, done, etc. -- and `post_save` signals are handled.
+
+Routing is included for django-channels. Make sure to use the [URLRouter][2]
+for your django-channels configuration. You can send data for the
+websocket to the following route:
+```
+/ws/get-task-status/
+```
+
+Or, create your own route:
+```python
+from django.urls import re_path
+
+from taskstate.consumers import CheckTaskStatus
+
+websocket_urlpatterns = [
+    re_path(r'^ws/custom-route-task-status/$', CheckTaskStatus.as_asgi()),
+]
+```
+
+Also remember to add the routes to your django-channels router, for example:
+```python
+application = ProtocolTypeRouter({
+    'http': django_asgi_app,
+    'websocket': AllowedHostsOriginValidator(
+        AuthMiddlewareStack(
+            URLRouter(
+                # ...
+                taskstate.routing.websocket_urlpatterns,
+            )
+        ),
+    ),
+})
+```
+
+A default template is included to render tasks in the UI -- use the following
+in your templates:
+```
+{% include 'taskstate/task_list.html' %}
+```
+
+The above template will merely render a list of tasks, however, to check the
+statuses of those tasks include the default script in your HTML before
+the closing body tag:
+```html
+<script src="{% static 'taskstate/get_task_status.js' %}" charset="utf-8"></script>
+```
+
+
+
+
+## Updating progress percentage of a `Task`
+See the `task_progress_example.py` file in the examples directory in the root of
+the repo for an example of how to update the progress of a task. Note that
+some of the details there are specific to Dramatiq itself.
+
+
+
+
+## Seen status of a `Task`
+When a task is set as "seen" the `cleanup_tasks` periodic task will delete
+the task when it is 30 seconds or older or has a "final/completed" status like
+"skipped", "failed" or "done".
+
+To set the seen status of a task once a user has seen the status
+of a completed task:
+
+
+To add the `cleanup_tasks` periodic job to Python APS:
+
+```python
+from django.conf import settings
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.triggers.cron import CronTrigger
+from taskstate.tasks import cleanup_tasks
+
+
+scheduler = BlockingScheduler(timezone=settings.TIME_ZONE)
+scheduler.add_job(
+    cleanup_tasks.send,
+    trigger=CronTrigger(second='*/30'), # Every 30 seconds
+    max_instances=1,
+    replace_existing=True,
+)
+```
+
+
+
+
+## Task statuses
+- enqueued
+- delayed
+- running
+- failed
+- done
+- skipped
+
+
+
+
+## Get all completed tasks
+
+```python
+completed_tasks = Task.objects.completed()
+```
+
+
+
+
 ## Management commands
 The `clear_tasks` management command will delete all `Task` objects currently
 in the database irrespective of status.
@@ -89,8 +216,10 @@ python manage.py clear_tasks
 
 
 ## Compatibility
-- Compatible with Python 3.8 and above.
-- Compatible with Django 3.2 and above.
+- Python 3.6+
+- Django 3.2+
+- Only supports PostgreSQL because `django.contrib.postgres.fields.ArrayField`
+is used. This could be looked at in future.
 
 
 ## Versioning
@@ -108,5 +237,8 @@ Check the root of the repo for these files.
 
 
 [//]: # (Links)
+
+[1]: https://channels.readthedocs.io/en/stable/
+[2]: https://channels.readthedocs.io/en/stable/topics/routing.html#urlrouter
 
 [200]: https://semver.org/

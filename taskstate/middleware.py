@@ -11,7 +11,32 @@ logger = logging.getLogger('taskstate.StateMiddleware')
 class StateMiddleware(Middleware):
     """
     This middleware keeps track of Dramatiq task executions only when
-    you need it to.
+    you need it to. StateMiddleware checks for a keyword argument in the
+    Dramatiq message called `for_state` which is a Python dictionary.
+    The for_state dictionary can have the following keys:
+    - user_pk
+    - model_name
+    - app_name
+    - description
+
+    These key-value pairs are saved to the `Task` object and can later be
+    used to do a lookup on the Task objects to show the right tasks to
+    the right users for specific things that the task is related to.
+
+    For example:
+    ```
+    opts = SomeModel._meta
+    Task.objects.filter(
+        user=user.pk,
+        app_name=opts.app_label,
+        model_name
+    )
+    ```
+
+    Each of these key-value pairs in the `for_state` dictionary are optional.
+    The middleware only checks for the existence of this keyword argument.
+    Therefore, if it's completely empty the task object will still be created
+    and updated.
     """
     for_state = None
 
@@ -66,7 +91,7 @@ class StateMiddleware(Middleware):
         status = Task.STATUS_ENQUEUED
         if delay:
             status = Task.STATUS_DELAYED
-        task = Task.tasks.create_or_update_from_message(
+        task = Task.objects.create_or_update_from_message(
             message,
             status=status,
             actor_name=message.actor_name,
@@ -85,7 +110,7 @@ class StateMiddleware(Middleware):
         from taskstate.models import Task
         user = self.get_user(message)
         logger.debug('Updating Task from message %r.', message.message_id)
-        task = Task.tasks.create_or_update_from_message(
+        task = Task.objects.create_or_update_from_message(
             message,
             status=Task.STATUS_RUNNING,
             actor_name=message.actor_name,
@@ -115,7 +140,7 @@ class StateMiddleware(Middleware):
             status = Task.STATUS_DONE
 
         logger.debug('Updating Task from message %r.', message.message_id)
-        task = Task.tasks.create_or_update_from_message(
+        task = Task.objects.create_or_update_from_message(
             message,
             status=status,
             actor_name=message.actor_name,

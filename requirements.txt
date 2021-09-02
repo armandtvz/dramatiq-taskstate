@@ -1,0 +1,10 @@
+asgiref==3.4.1
+Django==3.2.7
+django-dramatiq==0.10.0
+dramatiq==1.11.0
+prometheus-client==0.11.0
+psycopg2-binary==2.9.1
+pytz==2021.1
+redis==3.5.3
+sqlparse==0.4.1
+vermin==1.2.2

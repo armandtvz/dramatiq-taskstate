@@ -10,7 +10,7 @@ description = (
 
 setuptools.setup(
     name='dramatiq-taskstate',
-    version='0.1',
+    version='0.2',
     author='Armandt van Zyl',
     author_email='armandtvz@gmail.com',
     description=description,
@@ -19,6 +19,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/armandtvz/dramatiq-taskstate',
     packages=setuptools.find_packages(exclude=['test_proj', 'test_project']),
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
@@ -29,14 +30,20 @@ setuptools.setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Internet :: WWW/HTTP',
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.6',
     install_requires=[
         'Django>=3.2',
-        'dramatiq',
-        'django_dramatiq',
+        'dramatiq>=1.11',
+        'django_dramatiq>=0.10',
+        'psycopg2-binary',
     ],
+    extras_require = {
+        'websockets': [
+            'channels',
+            'redis',
+        ]
+    }
 )
