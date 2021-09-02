@@ -84,7 +84,7 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
 
     def set_task_seen(self, task_list):
         for task in task_list:
-            if task.is_complete():
+            if task.is_complete:
                 task.seen = True
         Task.objects.bulk_update(task_list, ['seen'])
 
