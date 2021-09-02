@@ -129,13 +129,26 @@ class Task(models.Model):
         default_permissions = []
 
 
+    def __str__(self):
+        return str(self.message)
+
+
     @cached_property
     def message(self):
         return Message.decode(bytes(self.message_data))
 
 
-    def __str__(self):
-        return str(self.message)
+    @property
+    def is_complete(self):
+        complete_statuses = [
+            Task.STATUS_DONE,
+            Task.STATUS_FAILED,
+            Task.STATUS_SKIPPED,
+        ]
+        if self.status in complete_statuses:
+            return True
+        return False
+
 
 
 

@@ -64,13 +64,18 @@
         }
     }
 
-
-    socket.onopen = (event) =>
+    function send_payload()
     {
         const payload = JSON.stringify({
             'pk_list': Array.from(task_set),
         });
         socket.send(payload);
+    }
+
+
+    socket.onopen = (event) =>
+    {
+        send_payload();
     }
 
     socket.onmessage = (event) =>
@@ -90,6 +95,10 @@
             if (status === 'done' || status === 'failed' || status === 'skipped')
             {
                 task_element.classList.remove('active');
+                // Let the server know that these tasks have been seen after
+                // completing. The server will automatically set all tasks to
+                // the correct seen status.
+                send_payload();
             }
             task_status.textContent = status;
             task_element.dataset.status = status;

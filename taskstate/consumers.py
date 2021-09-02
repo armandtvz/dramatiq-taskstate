@@ -75,6 +75,7 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
                     'id': task.pk,
                     'pk': task.pk,
                     'status': task.status,
+                    'progress': task.progress or '',
                 }
                 for task in task_list
             ],
@@ -83,17 +84,13 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
 
     def set_task_seen(self, task_list):
         for task in task_list:
-            if task.status == Task.STATUS_DONE:
+            if task.is_complete():
                 task.seen = True
         Task.objects.bulk_update(task_list, ['seen'])
 
 
     def get_tasks(self, pk_list):
-        task_list = []
-        try:
-            task_list = Task.objects.filter(pk__in=pk_list)
-        except Task.DoesNotExist:
-            pass
+        task_list = Task.objects.filter(pk__in=pk_list)
         return task_list
 
 

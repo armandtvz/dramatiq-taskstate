@@ -160,9 +160,10 @@ When a task is set as "seen" the `cleanup_tasks` periodic task will delete
 the task when it is 30 seconds or older or has a "final/completed" status like
 "skipped", "failed" or "done".
 
-To set the seen status of a task once a user has seen the status
-of a completed task:
-
+The seen status of a task is set automatically when sending a message to the
+websocket; this is handled in the default JS script. However, if not using
+the default script, just send the complete array of task ID's to the websocket:
+the server will then set each completed task as seen.
 
 To add the `cleanup_tasks` periodic job to Python APS:
 
