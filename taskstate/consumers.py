@@ -71,7 +71,7 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
         self.send_tasks(task_list)
 
 
-    def send_tasks(task_list):
+    def send_tasks(self, task_list):
         self.send(text_data=json.dumps({
             'tasks': [
                 {
