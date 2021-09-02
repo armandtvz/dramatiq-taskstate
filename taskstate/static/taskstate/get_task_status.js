@@ -83,7 +83,7 @@
         const response = JSON.parse(event.data);
         const tasks_returned = response.tasks;
 
-        for (let i = 0; i < task_list.length; i++)
+        for (let i = 0; i < tasks_returned.length; i++)
         {
             const task = tasks_returned[i];
             const pk = task.pk;
