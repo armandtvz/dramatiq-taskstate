@@ -51,8 +51,6 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
         pk_list = self.text_data_json.get('pk_list', None)
         if isinstance(pk_list, str) or isinstance(pk_list, int):
             pk_list = [pk_list]
-        else:
-            self.close()
 
         channel = Channel.objects.get(
             name=self.channel_name,
@@ -62,6 +60,7 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
 
         task_list = self.get_tasks(pk_list)
         self.set_task_seen(task_list)
+        task_list = task_list.filter(seen=False)
 
         # Need to send the results back immediately in case the task completes
         # very quickly. If the task is completed before this runs the results
@@ -69,6 +68,10 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
         # enough time to create the channel object. No channel object means
         # that the signal receivers for `task_changed` and `post_save` won't
         # be able to find the right channel to send the status/progress to.
+        self.send_tasks(task_list)
+
+
+    def send_tasks(task_list):
         self.send(text_data=json.dumps({
             'tasks': [
                 {
@@ -97,14 +100,4 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
     def task_status_update(self, event):
         pk_list = event['pk_list']
         task_list = self.get_tasks(pk_list)
-        self.send(text_data=json.dumps({
-            'tasks': [
-                {
-                    'id': task.pk,
-                    'pk': task.pk,
-                    'status': task.status,
-                    'progress': task.progress or '',
-                }
-                for task in task_list
-            ],
-        }))
+        self.send_tasks(task_list)

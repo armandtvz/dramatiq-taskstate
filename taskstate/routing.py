@@ -3,7 +3,6 @@ URL routing for django-channels consumers.
 Path's must be prefixed with `ws/`.
 """
 
-
 from django.urls import re_path
 
 from . import consumers

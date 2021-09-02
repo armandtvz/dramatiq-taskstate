@@ -16,14 +16,9 @@ def send_to_channel(task):
     A task was updated by Dramatiq's middleware.
     This sends the task to the relevant channel (django-channels) websocket.
     """
-    channel = None
-    try:
-        channels = Channel.objects.filter(
-            task_pk_list__contains=[task.pk],
-        )
-    except Channel.DoesNotExist:
-        return
-
+    channels = Channel.objects.filter(
+        task_pk_list__contains=[task.pk],
+    )
     channel_layer = get_channel_layer()
     for channel in channels:
         async_to_sync(channel_layer.send)(channel.name, {
