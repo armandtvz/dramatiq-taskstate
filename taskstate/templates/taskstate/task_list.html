@@ -1,0 +1,20 @@
+{% for task in tasks %}
+        <div class="task-status" data-status="{{ task.status }}" data-pk="{{ task.id }}">
+                <div class="task-status-content">
+                        <div>
+                                <p>
+                                        <span class="description">
+                                                {{ task.description }}
+                                        </span>
+                                        (<span class="task-status-text">
+                                                {{ task.status }}
+                                        </span>)
+                                        <span class="progress"></span>
+                                </p>
+                        </div>
+                </div>
+                <div class="progress-bar">
+                        <div class="progress-bar-value" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+        </div>
+{% endfor %}

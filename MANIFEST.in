@@ -1,0 +1,2 @@
+recursive-include taskstate/templates *
+recursive-include taskstate/static *
