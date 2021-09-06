@@ -69,7 +69,7 @@ and not Dramatiq tasks.
    }
    ```
 
-1. Each time the `Task` object is updated a `task_changed` signal is dispatched
+1. Each time a task's status is updated a `task_changed` signal is dispatched
    which can be handled like this:
    ```python
    from django.dispatch import receiver
@@ -81,6 +81,8 @@ and not Dramatiq tasks.
    def handle_task_changed(sender, task, **kwargs):
        pass
    ```
+   Keep in mind that this is not a `post_save` signal -- it only fires for
+   status updates.
 
 
 
@@ -131,13 +133,13 @@ application = ProtocolTypeRouter({
 ```
 
 A default template is included to render tasks in the UI -- use the following
-in your templates:
+in your templates (check the template to see which context variables to use):
 ```
 {% include 'taskstate/task_list.html' %}
 ```
 
-The above template will merely render a list of tasks, however, to check the
-statuses of those tasks include the default script in your HTML before
+The above template will merely render a list of tasks, however, to check/monitor
+the statuses of those tasks include the default script in your HTML before
 the closing body tag:
 ```html
 <script src="{% static 'taskstate/get_task_status.js' %}" charset="utf-8"></script>
@@ -155,16 +157,20 @@ some of the details there are specific to Dramatiq itself.
 
 
 ## Seen status of a `Task`
-When a task is set as "seen" the `cleanup_tasks` periodic task will delete
-the task when it is 30 seconds or older or has a "final/completed" status like
-"skipped", "failed" or "done".
+A task can only be marked as seen when it is complete. The seen status of a
+set of tasks can be set through another django-channels route:
+```
+/ws/set-task-seen/
+```
 
-The seen status of a task is set automatically when sending a message to the
-websocket; this is handled in the default JS script. However, if not using
-the default script, just send the complete array of task ID's to the websocket:
-the server will then set each completed task as seen.
+Sending a list of task ID's to this route will automatically mark all
+completed tasks from the list of ID's as seen. This is handled in the default
+JS script -- therefore, check the `get_task_status.js` file for an example.
 
-To add the `cleanup_tasks` periodic job to Python APS:
+There is also an APS (Advanced Python Scheduler) periodic task that will
+delete tasks older than 120 seconds for tasks that have been seen and
+have a "final/completed" status like "skipped", "failed" or "done". To add
+the `cleanup_tasks` periodic job to APS:
 
 ```python
 from django.conf import settings
@@ -176,7 +182,7 @@ from taskstate.tasks import cleanup_tasks
 scheduler = BlockingScheduler(timezone=settings.TIME_ZONE)
 scheduler.add_job(
     cleanup_tasks.send,
-    trigger=CronTrigger(second='*/30'), # Every 30 seconds
+    trigger=CronTrigger(second='*/240'), # Every 240 seconds
     max_instances=1,
     replace_existing=True,
 )
@@ -205,9 +211,27 @@ completed_tasks = Task.objects.completed()
 
 
 
+## Get tasks for display
+To get all the tasks that have been recently seen _and_ that have not been
+seen (including currently active tasks), use the following:
+
+```python
+tasks = Task.objects.for_display()
+```
+
+This will show tasks that have been seen in the last 30 seconds. To only show
+tasks seen in the last 15 seconds use the following:
+```python
+tasks = Task.objects.for_display(seconds_since_seen=15)
+```
+
+
+
+
 ## Management commands
 The `clear_tasks` management command will delete all `Task` objects currently
 in the database irrespective of status.
+
 ```
 python manage.py clear_tasks
 ```

@@ -27,6 +27,7 @@
     }
 
     let socket = undefined;
+    let task_seen_socket = undefined;
     try
     {
         socket = new WebSocket(
@@ -41,6 +42,21 @@
         // or is not logged in
         return;
     }
+    try
+    {
+        task_seen_socket = new WebSocket(
+            ws.scheme
+            + window.location.host
+            + '/ws/set-task-seen/'
+        );
+    }
+    catch (e)
+    {
+        // Either the user has no tasks (maybe only old tasks shown in UI)
+        // or is not logged in
+        return;
+    }
+
 
     for (let i = 0; i < tasks.length; i++)
     {
@@ -64,18 +80,23 @@
         }
     }
 
-    function send_payload()
+    function send_payload(_socket)
     {
         const payload = JSON.stringify({
             'pk_list': Array.from(task_set),
         });
-        socket.send(payload);
+        _socket.send(payload);
+    }
+
+    task_seen_socket.onopen = (event) =>
+    {
+        send_payload(task_seen_socket);
     }
 
 
     socket.onopen = (event) =>
     {
-        send_payload();
+        send_payload(socket);
     }
 
     socket.onmessage = (event) =>
@@ -98,7 +119,7 @@
                 // Let the server know that these tasks have been seen after
                 // completing. The server will automatically set all tasks to
                 // the correct seen status.
-                send_payload();
+                send_payload(task_seen_socket);
             }
             task_status.textContent = status;
             task_element.dataset.status = status;

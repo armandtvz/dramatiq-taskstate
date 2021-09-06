@@ -10,4 +10,5 @@ from . import consumers
 
 websocket_urlpatterns = [
     re_path(r'^ws/get-task-status/$', consumers.CheckTaskStatus.as_asgi()),
+    re_path(r'^ws/set-task-seen/$', consumers.SetTaskSeen.as_asgi()),
 ]

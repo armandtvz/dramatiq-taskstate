@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from django.db import models
 from django.utils.functional import cached_property
-from django.utils.timezone import now
+from django.utils import timezone
 from django.db.models import Q
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -32,7 +32,7 @@ class TaskManager(models.Manager):
         return task
 
 
-    def delete_old_tasks(self, max_task_age, only_if_seen=True):
+    def delete_old(self, max_task_age, only_if_seen=True):
         """
         Deletes task objects when:
         - Tasks with done status.
@@ -43,7 +43,7 @@ class TaskManager(models.Manager):
           delete a task if it has been marked as seen.
         """
         tasks = self.completed().filter(
-            created_date__lte=now() - timedelta(seconds=max_task_age)
+            created_date__lte=timezone.now() - timedelta(seconds=max_task_age)
         )
         if only_if_seen:
             tasks = tasks.filter(seen=True)
@@ -56,6 +56,14 @@ class TaskManager(models.Manager):
             | Q(status=Task.STATUS_FAILED)
             | Q(status=Task.STATUS_SKIPPED)
         )
+
+
+    def for_display(self, seconds_since_seen=30):
+        tasks = self.using(DATABASE_LABEL).filter(
+            Q(seen_at__gte=timezone.now() - timedelta(seconds=seconds_since_seen))
+            | Q(seen=False)
+        )
+        return tasks
 
 
 
@@ -85,6 +93,11 @@ class Task(models.Model):
         (STATUS_DONE, 'Done'),
         (STATUS_SKIPPED, 'Skipped'),
     ]
+    COMPLETE_STATUSES = [
+        STATUS_DONE,
+        STATUS_FAILED,
+        STATUS_SKIPPED,
+    ]
 
     message_id = models.UUIDField(unique=True)
     message_data = models.BinaryField()
@@ -106,6 +119,8 @@ class Task(models.Model):
 
     # Whether the task's final state has been seen by the user.
     seen = models.BooleanField(default=False)
+    # seen_at should not be set directly. Will be set automatically when seen=True
+    seen_at = models.DateTimeField(null=True, blank=True)
 
     # The name of the model and app that this task might be related to
     model_name = models.CharField(max_length=255, blank=True, null=True)
@@ -140,15 +155,32 @@ class Task(models.Model):
 
     @property
     def is_complete(self):
-        complete_statuses = [
-            Task.STATUS_DONE,
-            Task.STATUS_FAILED,
-            Task.STATUS_SKIPPED,
-        ]
-        if self.status in complete_statuses:
+        if self.status in self.COMPLETE_STATUSES:
             return True
         return False
 
+
+    @staticmethod
+    def set_seen_tasks(pk_list):
+        if not isinstance(pk_list, list):
+            raise TypeError('pk_list must be of type list')
+
+        task_list = Task.objects.filter(
+            pk__in=pk_list,
+            seen=False,
+            status__in=Task.COMPLETE_STATUSES,
+        )
+        task_list.update(
+            seen=True,
+            seen_at=timezone.now(),
+        )
+
+
+    def save(self, *args, **kwargs):
+        if self.seen or self.seen_at:
+            if not self.is_complete:
+                raise ValueError('Only completed tasks can be marked as seen')
+        super().save(*args, **kwargs)
 
 
 
@@ -162,7 +194,7 @@ class ChannelManager(models.Manager):
         is equal to 7 days.
         """
         channels = self.filter(
-            created_date__lte=now() - timedelta(seconds=max_age)
+            created_date__lte=timezone.now() - timedelta(seconds=max_age)
         )
         channels.delete()
 
