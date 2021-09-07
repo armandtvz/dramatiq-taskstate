@@ -125,6 +125,7 @@ class Task(models.Model):
     # The name of the model and app that this task might be related to
     model_name = models.CharField(max_length=255, blank=True, null=True)
     app_name = models.CharField(max_length=255, blank=True, null=True)
+    results = models.JSONField(blank=True, null=True)
 
     progress = models.IntegerField(
         validators=[
