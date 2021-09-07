@@ -107,6 +107,7 @@ class CheckTaskStatus(BaseAuthWebsocketConsumer):
                     'status': task.status,
                     'progress': task.progress or '',
                     'description': task.description or '',
+                    'results': task.results,
                 }
                 for task in task_list
             ],
