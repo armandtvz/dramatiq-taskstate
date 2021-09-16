@@ -18,6 +18,7 @@ class StateMiddleware(Middleware):
     - model_name
     - app_name
     - description
+    - metadata
 
     These key-value pairs are saved to the `Task` object and can later be
     used to do a lookup on the Task objects to show the right tasks to
@@ -100,6 +101,7 @@ class StateMiddleware(Middleware):
             model_name=self.for_state.get('model_name', ''),
             app_name=self.for_state.get('app_name', ''),
             description=self.for_state.get('description', 'Task'),
+            metadata=self.for_state.get('metadata', None),
         )
         self.send_signal(task)
 
@@ -119,6 +121,7 @@ class StateMiddleware(Middleware):
             model_name=self.for_state.get('model_name', ''),
             app_name=self.for_state.get('app_name', ''),
             description=self.for_state.get('description', 'Task'),
+            metadata=self.for_state.get('metadata', None),
         )
         self.send_signal(task)
 
@@ -149,5 +152,6 @@ class StateMiddleware(Middleware):
             model_name=self.for_state.get('model_name', ''),
             app_name=self.for_state.get('app_name', ''),
             description=self.for_state.get('description', 'Task'),
+            metadata=self.for_state.get('metadata', None),
         )
         self.send_signal(task)
