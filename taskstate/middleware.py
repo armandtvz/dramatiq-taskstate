@@ -18,6 +18,7 @@ class StateMiddleware(Middleware):
     - model_name
     - app_name
     - description
+    - kind
     - metadata
 
     These key-value pairs are saved to the `Task` object and can later be
@@ -101,6 +102,7 @@ class StateMiddleware(Middleware):
             model_name=self.for_state.get('model_name', ''),
             app_name=self.for_state.get('app_name', ''),
             description=self.for_state.get('description', 'Task'),
+            kind=self.for_state.get('kind', ''),
             metadata=self.for_state.get('metadata', None),
         )
         self.send_signal(task)
@@ -121,6 +123,7 @@ class StateMiddleware(Middleware):
             model_name=self.for_state.get('model_name', ''),
             app_name=self.for_state.get('app_name', ''),
             description=self.for_state.get('description', 'Task'),
+            kind=self.for_state.get('kind', ''),
             metadata=self.for_state.get('metadata', None),
         )
         self.send_signal(task)
@@ -152,6 +155,7 @@ class StateMiddleware(Middleware):
             model_name=self.for_state.get('model_name', ''),
             app_name=self.for_state.get('app_name', ''),
             description=self.for_state.get('description', 'Task'),
+            kind=self.for_state.get('kind', ''),
             metadata=self.for_state.get('metadata', None),
         )
         self.send_signal(task)

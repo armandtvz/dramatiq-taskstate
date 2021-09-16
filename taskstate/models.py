@@ -127,6 +127,7 @@ class Task(models.Model):
     app_name = models.CharField(max_length=255, blank=True, null=True)
     results = models.JSONField(blank=True, null=True)
     metadata = models.JSONField(blank=True, null=True)
+    kind = models.CharField(max_length=255, blank=True)
 
     progress = models.IntegerField(
         validators=[
