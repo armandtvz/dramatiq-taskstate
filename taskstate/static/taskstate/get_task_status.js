@@ -85,7 +85,10 @@
         const payload = JSON.stringify({
             'pk_list': Array.from(task_set),
         });
-        _socket.send(payload);
+        if (_socket.readyState == 1)
+        {
+            _socket.send(payload);
+        }
     }
 
     task_seen_socket.onopen = (event) =>
@@ -97,39 +100,39 @@
     socket.onopen = (event) =>
     {
         send_payload(socket);
-    }
 
-    socket.onmessage = (event) =>
-    {
-        const response = JSON.parse(event.data);
-        const tasks_returned = response.tasks;
-
-        for (let i = 0; i < tasks_returned.length; i++)
+        socket.onmessage = (event) =>
         {
-            const task = tasks_returned[i];
-            const pk = task.pk;
-            const status = task.status;
+            const response = JSON.parse(event.data);
+            const tasks_returned = response.tasks;
 
-            const selector = '.task-status[data-pk="' + pk.toString() + '"]';
-            const task_element = document.querySelector(selector);
-            const task_status = task_element.querySelector('.task-status-text');
-            if (status === 'done' || status === 'failed' || status === 'skipped')
+            for (let i = 0; i < tasks_returned.length; i++)
             {
-                task_element.classList.remove('active');
-                // Let the server know that these tasks have been seen after
-                // completing. The server will automatically set all tasks to
-                // the correct seen status.
-                send_payload(task_seen_socket);
-            }
-            task_status.textContent = status;
-            task_element.dataset.status = status;
+                const task = tasks_returned[i];
+                const pk = task.pk;
+                const status = task.status;
 
-            if (task.progress)
-            {
-                const progress = task_element.querySelector('.progress');
-                if (progress)
+                const selector = '.task-status[data-pk="' + pk.toString() + '"]';
+                const task_element = document.querySelector(selector);
+                const task_status = task_element.querySelector('.task-status-text');
+                if (status === 'done' || status === 'failed' || status === 'skipped')
                 {
-                    progress.textContent = task.progress + '%';
+                    task_element.classList.remove('active');
+                    // Let the server know that these tasks have been seen after
+                    // completing. The server will automatically set all tasks to
+                    // the correct seen status.
+                    send_payload(task_seen_socket);
+                }
+                task_status.textContent = status;
+                task_element.dataset.status = status;
+
+                if (task.progress)
+                {
+                    const progress = task_element.querySelector('.progress');
+                    if (progress)
+                    {
+                        progress.textContent = task.progress + '%';
+                    }
                 }
             }
         }
