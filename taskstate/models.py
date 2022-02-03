@@ -50,6 +50,16 @@ class TaskManager(models.Manager):
         tasks.delete()
 
 
+    def delete_stale(self, max_age=1200):
+        # max_age = 1200 seconds = 20 minutes
+        tasks = self.using(DATABASE_LABEL).filter(
+            status=Task.STATUS_ENQUEUED
+        ).filter(
+            created_date__lte=timezone.now() - timedelta(seconds=max_age)
+        )
+        tasks.delete()
+
+
     def completed(self):
         return self.using(DATABASE_LABEL).filter(
             Q(status=Task.STATUS_DONE)
