@@ -10,7 +10,7 @@ description = (
 
 setuptools.setup(
     name='dramatiq-taskstate',
-    version='0.3.3',
+    version='0.3.4',
     author='Armandt van Zyl',
     author_email='armandtvz@gmail.com',
     description=description,
